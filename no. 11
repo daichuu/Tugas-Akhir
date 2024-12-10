@@ -1,0 +1,75 @@
+julia> using JuMP
+
+julia> using GLPK
+
+julia> # Membuat model
+
+julia> model = Model(GLPK.Optimizer)
+A JuMP Model
+├ solver: GLPK
+├ objective_sense: FEASIBILITY_SENSE
+├ num_variables: 0
+├ num_constraints: 0
+└ Names registered in the model: none
+
+julia> # Variabel daya yang dihasilkan oleh setiap pembangkit
+julia> @variable(model, P[1:3] >= 0)  # Misalnya ada 3 pembangkit
+3-element Vector{VariableRef}:
+ P[1]
+ P[2]
+ P[3]
+
+julia> # Parameter biaya per unit daya
+julia> cost = [20, 30, 25]  # Biaya per unit untuk masing-masing pembangkit
+3-element Vector{Int64}:
+ 20
+ 30
+ 25
+
+julia> # Permintaan daya
+
+julia> demand = [100, 150, 200]  # Permintaan di berbagai lokasi
+3-element Vector{Int64}:
+ 100
+ 150
+ 200
+
+julia> # Fungsi tujuan: Minimize total cost
+
+julia> @objective(model, Min, sum(cost[i] * P[i] for i in 1:3))
+20 P[1] + 30 P[2] + 25 P[3]
+
+julia> # Batasan permintaan
+
+julia> @constraint(model, [i=1:3], sum(P[j] for j in 1:3) == demanjulia> @constraint(model, [i=1:3], sum(P[j] for j in 1:3) == demand[i])
+3-element Vector{ConstraintRef{Model, MathOptInterface.ConstraintIndex{MathOptInterface.ScalarAffineFunction{Float64}, MathOptInterface.EqualTo{Float64}}, ScalarShape}}:
+ P[1] + P[2] + P[3] == 100
+ P[1] + P[2] + P[3] == 150
+ P[1] + P[2] + P[3] == 200
+
+julia> # Batasan kapasitas maksimum
+
+julia> @constraint(model, [i=1:3], P[i] <= 300)  # Misalnya kapasitas maksimum 300 untuk setiap pembangkit
+3-element Vector{ConstraintRef{Model, MathOptInterface.ConstraintIndex{MathOptInterface.ScalarAffineFunction{Float64}, MathOptInterface.LessThan{Float64}}, ScalarShape}}:
+ P[1] <= 300
+ P[2] <= 300
+ P[3] <= 300
+
+julia> # Menyelesaikan model
+
+julia> optimize!(model)
+
+julia> # Menampilkan hasil
+
+julia> println("Optimal power generation:")
+Optimal power generation:
+
+julia> for i in 1:3
+           println("P[$i] = ", value(P[i]))
+           end
+P[1] = 100.0
+P[2] = 0.0
+P[3] = 0.0
+
+julia> println("Total cost = ", objective_value(model))
+Total cost = 2000.0
